@@ -15,9 +15,8 @@ One sentence: **for every open `bug` issue, post a deep analysis comment with a 
   - Read source via `Read` / `Grep` / `Glob`. Read git history via `Bash` (`git log`, `git blame`).
   - Optionally read a sibling repo (e.g. `weaver`) for cross-stack triage.
   - Output: a single `<!-- TRIAGE_V1 -->` comment with verdict, root cause, locations, owner, suggested tests.
-  - Add `triaged` label.
   - Add `--add-assignee` to the most likely owner from blame.
-  - If verdict is "Confirmed bug", **also** add `lark/needs-fix-agent` label and exit. **No fix-agent spawn.**
+  - **No label writes.** Triage status is encoded by the presence of the `<!-- TRIAGE_V1 -->` comment, not a label. Fix dispatch is out of scope.
 
 ## Out of scope (hard line)
 
@@ -25,7 +24,7 @@ One sentence: **for every open `bug` issue, post a deep analysis comment with a 
 - **No source edits.** Tool whitelist excludes `Edit`, `Write`, `NotebookEdit`.
 - **No Agent / sub-agent spawn.** Tool whitelist excludes `Agent`, `Skill`, `Task`.
 - **No PR creation.** No `gh pr create`. Tool whitelist excludes any `gh pr` write.
-- **No fix-agent spawn.** Whoever consumes `lark/needs-fix-agent` (currently fived's `/bugpipeline dispatch-pending-fixes`) is bugtriage's problem zero.
+- **No fix dispatch.** bugtriage does not signal downstream fix agents. Whoever wants to act on a `confirmed_bug` verdict reads the `<!-- TRIAGE_V1 -->` comment directly.
 
 ## Detection rule (the single source of "should I run?")
 
@@ -58,7 +57,7 @@ else:
     pass
 ```
 
-`triaged` label is set after every successful run. **The label is observability for humans, not part of the detection rule.** Detection is comment-timestamp comparison only — robust against label removal/addition by humans.
+**No label writes.** Detection is purely comment-timestamp comparison: presence of `<!-- TRIAGE_V1 -->` (any) plus its timestamp vs. fresh-input comment timestamps. This is robust against any label edits by humans.
 
 ## LLM step (single)
 
@@ -198,13 +197,12 @@ Never assign the reporter as owner.
 
 ## Milestones
 
-1. **M1: `bugtriage one <n>`** — single-issue, initial mode only. Validates: schema, prompt, blame lookup, comment render, label + assignee write.
+1. **M1: `bugtriage one <n>`** — single-issue, initial mode only. Validates: schema, prompt, blame lookup, comment render, assignee write.
 2. **M2: detection logic** — comment marker parser, "needs triage" predicate, unit tests against fixtures. Standalone, no LLM call.
 3. **M3: `bugtriage backlog`** — loops detection over all open bug issues, calls M1 for each. Idempotent.
 4. **M4: delta mode** — `triage_delta.md` prompt, parse previous TRIAGE_V1 JSON, render delta comment.
 5. **M5: `bugtriage watch`** — daemon. Polling loop with concurrency cap. Signal handling, graceful shutdown.
 6. **M6: cross-repo** — read sibling checkouts (weaver). Validate: tool permission stays within configured paths.
-7. **M7: confirmed-bug label hand-off** — verify `lark/needs-fix-agent` triggers the downstream consumer (fived `dispatch-pending-fixes`). Smoke test only.
 
 ## Open questions
 
