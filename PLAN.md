@@ -8,7 +8,7 @@ One sentence: **for every open `bug` issue, post a deep analysis comment with a 
 
 ## In scope
 
-- Poll a configured GitHub repo for `is:issue is:open label:bug` (and `enhancement` if enabled).
+- Poll a configured GitHub repo for `is:issue is:open label:bug label:bugpatrol` (and `enhancement` if enabled). The `bugpatrol` label scope is mandatory — it prevents bugtriage from double-handling issues owned by the legacy `/ghissue triage` skill during cutover. To triage a non-bugpatrol issue, a human must add the `bugpatrol` label first.
 - Detect when triage is needed: never triaged before, **or** new human/synced comment arrived after the last triage.
 - For each triage candidate:
   - Read issue body + comments (including `LARK_SYNC` ones from bugpatrol — treated as fresh human input).
@@ -157,7 +157,8 @@ Restart-safe by construction.
 [github]
 repo = "TheCloverLab/fived"
 gh_as_bot_script = "/path/to/fived/scripts/gh-as-bot.sh"
-include_labels = ["bug"]              # or ["bug", "enhancement"]
+require_labels = ["bugpatrol"]        # ALL must be present (cutover gate)
+include_labels = ["bug"]              # ANY suffices (or ["bug", "enhancement"])
 exclude_labels = []
 
 [siblings]                            # extra repos to read for cross-stack triage
